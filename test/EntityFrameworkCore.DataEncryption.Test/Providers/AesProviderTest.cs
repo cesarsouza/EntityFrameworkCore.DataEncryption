@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
+
 using Xunit;
 
 namespace Microsoft.EntityFrameworkCore.DataEncryption.Test.Providers
@@ -28,6 +30,27 @@ namespace Microsoft.EntityFrameworkCore.DataEncryption.Test.Providers
             Assert.NotNull(decryptedData);
 
             Assert.Equal(input, decryptedData);
+        }
+
+        [Theory]
+        [InlineData(AesKeySize.AES128Bits)]
+        [InlineData(AesKeySize.AES192Bits)]
+        [InlineData(AesKeySize.AES256Bits)]
+        public void EncryptDecryptByteArrayTest(AesKeySize keySize)
+        {
+            string inputString = StringHelper.RandomString(20);
+            byte[] inputBytes = Encoding.ASCII.GetBytes(inputString);
+            AesKeyInfo encryptionKeyInfo = AesProvider.GenerateKey(keySize);
+            var provider = new AesProvider(encryptionKeyInfo.Key);
+
+            byte[] encryptedData = provider.Encrypt(inputBytes);
+            Assert.NotNull(encryptedData);
+
+            byte[] decryptedData = provider.Decrypt(encryptedData);
+            string decryptedString = Encoding.ASCII.GetString(decryptedData);
+            Assert.NotNull(decryptedData);
+
+            Assert.Equal(inputString, decryptedString);
         }
 
         [Theory]

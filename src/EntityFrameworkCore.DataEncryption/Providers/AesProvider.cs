@@ -53,11 +53,22 @@ namespace Microsoft.EntityFrameworkCore.DataEncryption.Providers
         /// <summary>
         /// Encrypt a string using the AES algorithm.
         /// </summary>
-        /// <param name="dataToEncrypt"></param>
-        /// <returns></returns>
+        /// <param name="dataToEncrypt">Input data as a string to encrypt.</param>
+        /// <returns>Encrypted data as a string.</returns>
         public string Encrypt(string dataToEncrypt)
         {
             byte[] input = Encoding.UTF8.GetBytes(dataToEncrypt);
+            byte[] encrypted = Encrypt(input);
+            return Convert.ToBase64String(encrypted);
+        }
+
+        /// <summary>
+        /// Encrypts a string using the AES algorithm.
+        /// </summary>
+        /// <param name="dataToEncrypt">Input data as a string to encrypt.</param>
+        /// <returns>Encrypted data as a string.</returns>
+        public byte[] Encrypt(byte[] dataToEncrypt)
+        {
             byte[] encrypted = null;
 
             using (AesCryptoServiceProvider cryptoServiceProvider = CreateCryptographyProvider())
@@ -71,21 +82,21 @@ namespace Microsoft.EntityFrameworkCore.DataEncryption.Providers
                 using (var cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write))
                 {
                     memoryStream.Write(initializationVector, 0, initializationVector.Length);
-                    cryptoStream.Write(input, 0, input.Length);
+                    cryptoStream.Write(dataToEncrypt, 0, dataToEncrypt.Length);
                     cryptoStream.FlushFinalBlock();
                 }
 
                 encrypted = memoryStream.ToArray();
             }
 
-            return Convert.ToBase64String(encrypted);
+            return encrypted;
         }
 
         /// <summary>
-        /// Decrypt a string using the AES algorithm.
+        /// Decrypts a string using the AES algorithm.
         /// </summary>
-        /// <param name="dataToDecrypt"></param>
-        /// <returns></returns>
+        /// <param name="dataToDecrypt">Encrypted data as a string to decrypt.</param>
+        /// <returns>Decrypted data as a string.</returns>
         public string Decrypt(string dataToDecrypt)
         {
             byte[] input = Convert.FromBase64String(dataToDecrypt);
@@ -107,6 +118,28 @@ namespace Microsoft.EntityFrameworkCore.DataEncryption.Providers
             }
 
             return decrypted;
+        }
+
+        /// <summary>
+        /// Decrypts a byte array using the AES algorithm.
+        /// </summary>
+        /// <param name="dataToDecrypt"></param>
+        /// <returns></returns>
+        public byte[] Decrypt(byte[] dataToDecrypt)
+        {
+            using (var memoryStream = new MemoryStream(dataToDecrypt))
+            {
+                var initializationVector = new byte[InitializationVectorSize];
+
+                memoryStream.Read(initializationVector, 0, initializationVector.Length);
+
+                using AesCryptoServiceProvider cryptoServiceProvider = CreateCryptographyProvider();
+                using ICryptoTransform cryptoTransform = cryptoServiceProvider.CreateDecryptor(_key, initializationVector);
+                using var crypto = new CryptoStream(memoryStream, cryptoTransform, CryptoStreamMode.Read);
+                using var reader = new MemoryStream();
+                crypto.CopyTo(reader);
+                return reader.ToArray();
+            }
         }
 
         /// <summary>
@@ -147,5 +180,6 @@ namespace Microsoft.EntityFrameworkCore.DataEncryption.Providers
 
             return new AesKeyInfo(crypto.Key, crypto.IV);
         }
+
     }
 }

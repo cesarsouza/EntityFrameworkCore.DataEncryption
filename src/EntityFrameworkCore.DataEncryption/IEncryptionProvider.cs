@@ -18,5 +18,19 @@
         /// <param name="dataToDecrypt">Encrypted data as a string to decrypt.</param>
         /// <returns>Decrypted data as a string.</returns>
         string Decrypt(string dataToDecrypt);
+
+        /// <summary>
+        /// Encrypts a byte array.
+        /// </summary>
+        /// <param name="dataToEncrypt">Input data as a byte[] to encrypt.</param>
+        /// <returns>Encrypted data as a string.</returns>
+       byte[] Encrypt(byte[] dataToEncrypt);
+
+        /// <summary>
+        /// Decrypts a byte array.
+        /// </summary>
+        /// <param name="dataToDecrypt">Encrypted data as a byte[] to decrypt.</param>
+        /// <returns>Decrypted data as a string.</returns>
+        byte[] Decrypt(byte[] dataToDecrypt);
     }
 }
